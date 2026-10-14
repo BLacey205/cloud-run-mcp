@@ -1,0 +1,524 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Manager on Duty</title>
+<meta name="description" content="Three free tools for restaurant managers: check prime cost, write a shift handoff, reply to a guest review.">
+<style>
+:root {
+  --bg: #F7F3EA; --card: #FFFFFF; --text: #1B2430; --muted: #5A6472;
+  --navy: #1F3A5F; --brass: #B8902F; --head: #1F3A5F;
+  --btn-bg: #1F3A5F; --btn-text: #FFFFFF;
+  --line: #D9D2C0; --field: #FFFFFF; --field-line: #8A93A0;
+  --warn: #9B2C2C; --warn-bg: #FBEFEA; --ok: #2F6B3F;
+  --focus: #1F3A5F; --shadow: 0 1px 2px rgba(27,36,48,.08), 0 4px 14px rgba(27,36,48,.06);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0F1A2B; --card: #17263C; --text: #F2EEE4; --muted: #A9B3C2;
+    --navy: #D9B25C; --brass: #D9B25C; --head: #F2EEE4;
+    --btn-bg: #D9B25C; --btn-text: #0F1A2B;
+    --line: #2C3D57; --field: #0F1A2B; --field-line: #6F7F99;
+    --warn: #F0A3A3; --warn-bg: #2B1D22; --ok: #8FD19E;
+    --focus: #D9B25C; --shadow: 0 1px 2px rgba(0,0,0,.4), 0 4px 14px rgba(0,0,0,.25);
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+.serif { font-family: Georgia, "Playfair Display", "Times New Roman", serif; }
+.wrap { max-width: 960px; margin: 0 auto; padding: 0 16px; }
+header.top { padding: 20px 0 14px; }
+header.top .wrap { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.wordmark {
+  font-variant: small-caps; letter-spacing: .28em; font-weight: 700; font-size: 15px;
+  color: var(--head); padding-bottom: 6px; border-bottom: 2px solid var(--brass);
+}
+.byline { color: var(--muted); font-size: 14px; }
+.rule { border: 0; border-top: 1px solid var(--brass); margin: 0; opacity: .7; }
+.hero { padding: 40px 0 28px; }
+.hero h1 { font-family: Georgia, "Playfair Display", serif; font-weight: 700; font-size: clamp(30px, 6vw, 46px); line-height: 1.12; margin: 0 0 12px; color: var(--head); }
+.hero p { margin: 0; max-width: 60ch; color: var(--muted); font-size: 18px; }
+.tabs { display: flex; gap: 4px; overflow-x: auto; border-bottom: 1px solid var(--brass); margin-top: 8px; scrollbar-width: thin; }
+.tabs button {
+  flex: 0 0 auto; background: none; border: 0; border-bottom: 3px solid transparent; margin-bottom: -1px;
+  padding: 12px 16px; font: inherit; font-weight: 600; color: var(--muted); cursor: pointer; white-space: nowrap;
+}
+.tabs button[aria-selected="true"] { color: var(--head); border-bottom-color: var(--brass); }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible {
+  outline: 3px solid var(--focus); outline-offset: 2px;
+}
+.panel { padding: 28px 0 8px; }
+.panel[hidden] { display: none; }
+.card { background: var(--card); border-radius: 12px; padding: 20px; box-shadow: var(--shadow); border: 1px solid var(--line); margin-bottom: 20px; }
+h2 { font-family: Georgia, "Playfair Display", serif; color: var(--head); font-size: 26px; margin: 0 0 6px; }
+h3 { font-family: Georgia, "Playfair Display", serif; color: var(--head); font-size: 18px; margin: 18px 0 8px; }
+.lede { color: var(--muted); margin: 0 0 18px; }
+.grid { display: grid; gap: 14px; grid-template-columns: 1fr; }
+@media (min-width: 640px) { .grid.two { grid-template-columns: 1fr 1fr; } .grid.three { grid-template-columns: repeat(3, 1fr); } }
+label, .lbl { display: block; font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+.hint { font-weight: 400; color: var(--muted); font-size: 13px; }
+input[type=text], input[type=date], input[type=number], select, textarea {
+  width: 100%; font: inherit; color: var(--text); background: var(--field);
+  border: 1px solid var(--field-line); border-radius: 8px; padding: 10px 12px;
+}
+textarea { min-height: 84px; resize: vertical; }
+.check { display: flex; gap: 10px; align-items: flex-start; font-weight: 400; }
+.check input { margin-top: 4px; width: 18px; height: 18px; accent-color: var(--brass); }
+.btns { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+button.btn {
+  font: inherit; font-weight: 600; padding: 10px 18px; border-radius: 8px; cursor: pointer;
+  background: var(--btn-bg); color: var(--btn-text); border: 1px solid var(--btn-bg);
+}
+button.btn.ghost { background: transparent; color: var(--head); border-color: var(--field-line); }
+.num { font-variant-numeric: tabular-nums lining-nums; }
+.kpis { display: grid; gap: 12px; grid-template-columns: 1fr; margin-bottom: 16px; }
+@media (min-width: 640px) { .kpis { grid-template-columns: repeat(3, 1fr); } }
+.kpi { border: 1px solid var(--line); border-top: 3px solid var(--brass); border-radius: 10px; padding: 12px 14px; }
+.kpi .big { font-family: Georgia, "Playfair Display", serif; font-size: 34px; color: var(--head); line-height: 1.1; }
+.kpi .small { color: var(--muted); font-size: 13px; }
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums lining-nums; }
+th, td { text-align: right; padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { font-size: 13px; color: var(--muted); font-weight: 600; }
+.bar { position: relative; height: 12px; background: var(--line); border-radius: 6px; margin: 4px 0 2px; overflow: visible; }
+.bar .fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--navy); border-radius: 6px; }
+.bar .fill.over { background: var(--warn); }
+.bar .mark { position: absolute; top: -4px; bottom: -4px; width: 3px; background: var(--text); border-radius: 2px; }
+.barrow { margin: 10px 0; }
+.barrow .cap { display: flex; justify-content: space-between; font-size: 14px; gap: 8px; flex-wrap: wrap; }
+.status-over { color: var(--warn); font-weight: 700; }
+.status-ok { color: var(--ok); font-weight: 700; }
+.note { color: var(--muted); font-size: 13px; }
+.msg { padding: 14px 16px; border: 1px dashed var(--field-line); border-radius: 10px; color: var(--muted); }
+.msg.err { color: var(--warn); border-color: var(--warn); border-style: solid; background: var(--warn-bg); }
+.warnbox { border: 2px solid var(--warn); background: var(--warn-bg); color: var(--text); border-radius: 10px; padding: 12px 14px; margin: 14px 0; font-weight: 600; }
+.warnbox[hidden] { display: none; }
+ul.check-list { margin: 6px 0 10px 1.1em; padding: 0; }
+.copied { color: var(--ok); font-weight: 600; min-height: 1.4em; margin-top: 8px; }
+pre.out {
+  white-space: pre-wrap; word-wrap: break-word; background: var(--field); border: 1px solid var(--line);
+  border-radius: 8px; padding: 14px; font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; margin: 0;
+}
+footer { margin-top: 28px; padding: 22px 0 40px; color: var(--muted); font-size: 14px; }
+footer p { margin: 6px 0; }
+footer a { color: var(--head); }
+@media (prefers-reduced-motion: no-preference) {
+  .fade { animation: fadein .25s ease-out; }
+  @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="wordmark">MANAGER ON DUTY</div>
+    <div class="byline">Built by a working GM</div>
+  </div>
+</header>
+<hr class="rule">
+<main class="wrap">
+  <section class="hero">
+    <h1>Run the shift. Know your numbers.</h1>
+    <p>Three free tools for restaurant managers: check prime cost, write a shift handoff, reply to a guest review.</p>
+  </section>
+
+  <div class="tabs" role="tablist" aria-label="Tools">
+    <button role="tab" id="tab-prime" aria-controls="panel-prime" aria-selected="true">Prime cost</button>
+    <button role="tab" id="tab-handoff" aria-controls="panel-handoff" aria-selected="false" tabindex="-1">Shift handoff</button>
+    <button role="tab" id="tab-review" aria-controls="panel-review" aria-selected="false" tabindex="-1">Review reply</button>
+  </div>
+
+  <!-- Tool 1 -->
+  <section class="panel" id="panel-prime" role="tabpanel" aria-labelledby="tab-prime">
+    <div class="card">
+      <h2>Prime cost check</h2>
+      <p class="lede">Enter your period totals. Results update as you type.</p>
+      <div class="grid two">
+        <div><label for="p-sales">Net sales ($)</label><input id="p-sales" type="text" inputmode="decimal" autocomplete="off" placeholder="48,000"></div>
+        <div><label for="p-cogs">Food and beverage COGS ($)</label><input id="p-cogs" type="text" inputmode="decimal" autocomplete="off" placeholder="14,400"></div>
+        <div><label for="p-labor">Total labor ($)</label><input id="p-labor" type="text" inputmode="decimal" autocomplete="off" placeholder="16,800"></div>
+        <div style="display:flex;align-items:flex-end"><label class="check"><input id="p-burden" type="checkbox"><span>Labor includes payroll taxes and benefits</span></label></div>
+      </div>
+      <h3>Targets <span class="hint">(rule of thumb, edit to your own)</span></h3>
+      <div class="grid three">
+        <div><label for="t-cogs">COGS % target</label><input id="t-cogs" type="text" inputmode="decimal" autocomplete="off" placeholder="30"></div>
+        <div><label for="t-labor">Labor % target</label><input id="t-labor" type="text" inputmode="decimal" autocomplete="off" placeholder="32"></div>
+        <div><label for="t-prime">Prime cost % target</label><input id="t-prime" type="text" inputmode="decimal" autocomplete="off" placeholder="65"></div>
+      </div>
+    </div>
+    <div class="card" aria-live="polite" id="prime-result"></div>
+  </section>
+
+  <!-- Tool 2 -->
+  <section class="panel" id="panel-handoff" role="tabpanel" aria-labelledby="tab-handoff" hidden>
+    <div class="card">
+      <h2>Shift handoff</h2>
+      <p class="lede">Your words go into the log exactly as typed. Blank sections are skipped.</p>
+      <div class="grid three">
+        <div><label for="h-date">Date</label><input id="h-date" type="date"></div>
+        <div><label for="h-shift">Shift</label>
+          <select id="h-shift"><option value="">Select</option><option>Open</option><option>Mid</option><option>Close</option></select></div>
+        <div><label for="h-mgr">Manager name</label><input id="h-mgr" type="text" autocomplete="off"></div>
+      </div>
+      <div class="grid two" style="margin-top:14px">
+        <div><label for="h-numbers">Numbers <span class="hint">(sales, covers, anything quoted exactly)</span></label><textarea id="h-numbers"></textarea></div>
+        <div><label for="h-86">86'd or low stock</label><textarea id="h-86"></textarea></div>
+        <div><label for="h-staff">Staffing</label><textarea id="h-staff"></textarea></div>
+        <div><label for="h-guest">Guest issues</label><textarea id="h-guest"></textarea></div>
+        <div><label for="h-equip">Equipment and maintenance</label><textarea id="h-equip"></textarea></div>
+        <div><label for="h-must">Must-do next shift <span class="hint">(one per line)</span></label><textarea id="h-must"></textarea></div>
+      </div>
+      <div style="margin-top:14px"><label for="h-unsure">Not sure about <span class="hint">(kept word for word)</span></label><textarea id="h-unsure"></textarea></div>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Log</h3>
+      <pre class="out" id="h-out" aria-live="polite"></pre>
+      <div class="btns">
+        <button class="btn" id="h-copy" type="button">Copy</button>
+        <button class="btn ghost" id="h-clear" type="button">Clear</button>
+      </div>
+      <div class="copied" id="h-copied" role="status"></div>
+    </div>
+  </section>
+
+  <!-- Tool 3 -->
+  <section class="panel" id="panel-review" role="tabpanel" aria-labelledby="tab-review" hidden>
+    <div class="card">
+      <h2>Review reply builder</h2>
+      <p class="lede">These are template drafts for you to edit. Nothing is posted anywhere.</p>
+      <div class="grid two">
+        <div><label for="r-rest">Restaurant name</label><input id="r-rest" type="text" autocomplete="off"></div>
+        <div><label for="r-stars">Star rating</label>
+          <select id="r-stars"><option value="">Select</option><option value="5">5 stars</option><option value="4">4 stars</option><option value="3">3 stars</option><option value="2">2 stars</option><option value="1">1 star</option></select></div>
+        <div><label for="r-guest">Guest name <span class="hint">(optional)</span></label><input id="r-guest" type="text" autocomplete="off"></div>
+        <div><label for="r-detail">One specific detail to mention</label><input id="r-detail" type="text" maxlength="60" autocomplete="off" placeholder="the ribeye, the wait, our server"></div>
+        <div><label for="r-sig">Signature</label><input id="r-sig" type="text" autocomplete="off" value="The Management Team"></div>
+        <div><label for="r-contact">Contact for offline follow-up <span class="hint">(optional)</span></label><input id="r-contact" type="text" autocomplete="off" placeholder="phone or email"></div>
+      </div>
+      <div style="margin-top:14px"><label for="r-text">Review text</label><textarea id="r-text"></textarea></div>
+      <div class="warnbox" id="r-warn" role="alert" hidden>This review may involve a health, safety, or legal issue. Keep your reply short and neutral, move to offline contact, and check with your owner or a lawyer before posting.</div>
+      <div class="btns"><button class="btn" id="r-build" type="button">Build reply</button><button class="btn ghost" id="r-clear" type="button">Clear</button></div>
+      <div id="r-empty" class="msg" style="margin-top:14px">Choose a star rating, then build the reply.</div>
+    </div>
+    <div class="card" id="r-results" hidden>
+      <label for="r-long">Draft <span class="hint num" id="r-long-count"></span></label>
+      <textarea id="r-long" style="min-height:170px"></textarea>
+      <div class="btns"><button class="btn" id="r-copy-long" type="button">Copy draft</button></div>
+      <label for="r-short" style="margin-top:18px">Short version <span class="hint num" id="r-short-count"></span></label>
+      <textarea id="r-short" style="min-height:110px"></textarea>
+      <div class="btns"><button class="btn" id="r-copy-short" type="button">Copy short version</button></div>
+      <div class="copied" id="r-copied" role="status"></div>
+    </div>
+  </section>
+</main>
+
+<hr class="rule">
+<footer>
+  <div class="wrap">
+    <p>Nothing you type is sent anywhere or saved. It stays in your browser and clears when you close or reload the page.</p>
+    <p>Questions or feedback: [email to be added]</p>
+    <p>Manager on Duty, from Front of House AI. <a id="foh-link" href="#" hidden></a></p>
+    <p>Rules-of-thumb ranges only. Not accounting, tax, or legal advice.</p>
+  </div>
+</footer>
+
+<script id="core">
+// Pure logic. No DOM access here, so it can be tested in Node.
+const FOH = { url: '', text: '' };
+
+function parseNum(raw) {
+  if (raw === null || raw === undefined) return null;
+  const s = String(raw).replace(/[$,\s%]/g, '');
+  if (s === '' || !/^-?\d*\.?\d+$/.test(s) && !/^-?\d+\.$/.test(s)) return null;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
+}
+function round1(x) { return Math.round((x + Number.EPSILON) * 10) / 10; }
+
+const DEFAULT_TARGETS = { cogs: 30, labor: 32, prime: 65 };
+
+function statusFor(variance) {
+  if (variance > 1.0001) return 'Over target';
+  if (variance < -1.0001) return 'Under target';
+  return 'On target (within 1 point)';
+}
+
+function calcPrime(input) {
+  const sales = input.sales, cogs = input.cogs, labor = input.labor;
+  if (sales === null || sales === undefined) return { state: 'empty', message: 'Enter net sales to begin' };
+  if (!(sales > 0)) return { state: 'error', message: 'Check your net sales figure' };
+  if ((cogs !== null && cogs < 0) || (labor !== null && labor < 0)) {
+    return { state: 'error', message: 'Check your COGS and labor figures' };
+  }
+  const t = Object.assign({}, DEFAULT_TARGETS);
+  for (const k of ['cogs', 'labor', 'prime']) {
+    if (input.targets && input.targets[k] !== null && input.targets[k] !== undefined) t[k] = input.targets[k];
+  }
+  const rows = [];
+  function row(key, label, dollars) {
+    const pct = round1(dollars / sales * 100);
+    const variance = round1(pct - t[key]);
+    rows.push({ key, label, dollars, pct, target: t[key], variance, status: statusFor(variance) });
+  }
+  if (cogs !== null) row('cogs', 'COGS', cogs);
+  if (labor !== null) row('labor', 'Labor', labor);
+  if (cogs !== null && labor !== null) row('prime', 'Prime cost', cogs + labor);
+  return { state: 'ok', sales, rows, missing: cogs === null || labor === null };
+}
+
+const CHECKS = {
+  cogs: ['Portioning against your recipe specs', 'Waste, spoilage and prep over-production', 'Comps and voids that were not rung in correctly', 'Vendor price changes since your last costing'],
+  labor: ['Overtime hours and who is driving them', 'Scheduling against sales by day part', 'Over-staffed day parts', 'Early cuts and late call-ins that were not adjusted']
+};
+const NEXT = {
+  cogs: 'Next step: compare this period\'s invoices and waste log against your sales mix for the largest category.',
+  labor: 'Next step: line up hourly sales against hourly labor for the last week and look at the slowest hours.',
+  prime: 'Next step: start with whichever of COGS or labor is furthest over its target.'
+};
+
+function summaryText(input, res) {
+  if (res.state !== 'ok') return res.message;
+  const money = n => '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const lines = ['PRIME COST CHECK', 'Net sales: ' + money(res.sales)];
+  res.rows.forEach(r => lines.push(r.label + ': ' + money(r.dollars) + ' | ' + r.pct.toFixed(1) + '% of sales | target ' + r.target + '% | ' +
+    (r.variance > 0 ? '+' : '') + r.variance.toFixed(1) + ' pts | ' + r.status));
+  lines.push('Labor ' + (input.burden ? 'includes' : 'does not include (as entered)') + ' payroll taxes and benefits.');
+  const over = res.rows.filter(r => r.status === 'Over target');
+  over.forEach(r => { lines.push(''); lines.push(r.label + ' worth checking:'); (CHECKS[r.key] || []).forEach(c => lines.push('- ' + c)); lines.push(NEXT[r.key]); });
+  lines.push('', 'Ranges are rules of thumb and vary by concept. Not accounting or tax advice.');
+  return lines.join('\n');
+}
+
+function nonEmptyLines(s) { return String(s || '').split(/\r?\n/).map(x => x.trim()).filter(Boolean); }
+
+function buildHandoff(f) {
+  const ns = v => (v && String(v).trim()) ? String(v).trim() : 'not stated';
+  const out = ['SHIFT HANDOFF', 'Date: ' + ns(f.date), 'Shift: ' + ns(f.shift), 'Manager: ' + ns(f.manager)];
+  const sections = [['Numbers', f.numbers], ['86\'d or low stock', f.eightySix], ['Staffing', f.staffing], ['Guest issues', f.guest],
+    ['Equipment and maintenance', f.equipment], ['Must-do next shift', f.must, true], ['Not sure about', f.unsure]];
+  sections.forEach(([h, v, numbered]) => {
+    const ls = nonEmptyLines(v);
+    if (!ls.length) return;
+    out.push('', h.toUpperCase());
+    ls.forEach((l, i) => out.push(numbered ? (i + 1) + '. ' + l : '- ' + l));
+  });
+  return out.join('\n');
+}
+
+const SENSITIVE = /\b(ill|illness|sick|food poisoning|injur\w*|hurt|allergic|allergy|discriminat\w*|racis[mt]|stole|stolen|theft|harass\w*|lawyer|attorney)\b/i;
+function needsCaution(text) { return SENSITIVE.test(String(text || '')); }
+
+function wordCount(s) { return (String(s).trim().match(/\S+/g) || []).length; }
+
+function buildReview(f) {
+  const full = buildReviewWith(f, true);
+  if (!full) return null;
+  const bare = buildReviewWith(f, false);
+  return {
+    long: wordCount(full.long) < 120 ? full.long : bare.long,
+    short: wordCount(full.short) < 50 ? full.short : bare.short
+  };
+}
+
+function buildReviewWith(f, useDetail) {
+  const stars = Number(f.stars);
+  if (!(stars >= 1 && stars <= 5)) return null;
+  const R = (f.restaurant || '').trim() || 'our restaurant';
+  const hi = (f.guest || '').trim() ? 'Hello ' + f.guest.trim() + ',' : 'Hello,';
+  const detail = useDetail ? (f.detail || '').trim() : '';
+  const sig = (f.signature || '').trim() || 'The Management Team';
+  const contact = (f.contact || '').trim() || '[phone or email]';
+  const hasContact = !!(f.contact || '').trim();
+  let long, short;
+  if (stars >= 4) {
+    long = hi + ' Thank you for choosing ' + R + (detail ? ' and for mentioning ' + detail : '') + '. It means a lot to the whole team, and we would be glad to welcome you back soon.\n\n' + sig;
+    short = hi + ' Thank you for visiting ' + R + (detail ? ', and for mentioning ' + detail : '') + '. We hope to see you again soon.\n\n' + sig;
+  } else if (stars === 3) {
+    long = hi + ' Thank you for sharing your visit to ' + R + '. ' + (detail ? 'You mentioned ' + detail + ', and we heard that. ' : '') +
+      'We are sorry parts of the visit missed the mark, and we are reviewing it with the team so we can do better. We would welcome the chance to earn a better experience from you.' +
+      (hasContact ? ' If you would like to talk it through, please reach us at ' + contact + '.' : '') + '\n\n' + sig;
+    short = hi + ' Thank you for your feedback' + (detail ? ' about ' + detail : '') + '. We are sorry parts of the visit missed the mark and are reviewing it with the team.\n\n' + sig;
+  } else {
+    long = hi + ' We are sorry your visit to ' + R + ' was not what you expected. ' + (detail ? 'You mentioned ' + detail + ', and we are taking that seriously. ' : '') +
+      'We would like to hear more and understand what happened. Please contact us at ' + contact + ' so a manager can follow up with you directly.\n\n' + sig;
+    short = hi + ' We are sorry your visit was not what you expected. Please contact us at ' + contact + ' so a manager can follow up directly.\n\n' + sig;
+  }
+  return { long, short };
+}
+
+if (typeof module !== 'undefined') module.exports = { parseNum, round1, calcPrime, summaryText, buildHandoff, needsCaution, buildReview, wordCount, nonEmptyLines };
+</script>
+
+<script id="ui">
+(function () {
+  const $ = id => document.getElementById(id);
+
+  // ---------- Tabs ----------
+  const tabs = Array.from(document.querySelectorAll('[role=tab]'));
+  function select(tab, focus) {
+    tabs.forEach(t => {
+      const on = t === tab;
+      t.setAttribute('aria-selected', on);
+      t.tabIndex = on ? 0 : -1;
+      $(t.getAttribute('aria-controls')).hidden = !on;
+    });
+    if (focus) tab.focus();
+    tab.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }
+  tabs.forEach((t, i) => {
+    t.addEventListener('click', () => select(t));
+    t.addEventListener('keydown', e => {
+      let j = null;
+      if (e.key === 'ArrowRight') j = (i + 1) % tabs.length;
+      else if (e.key === 'ArrowLeft') j = (i - 1 + tabs.length) % tabs.length;
+      else if (e.key === 'Home') j = 0;
+      else if (e.key === 'End') j = tabs.length - 1;
+      if (j !== null) { e.preventDefault(); select(tabs[j], true); }
+    });
+  });
+
+  // ---------- Helpers ----------
+  function el(tag, props, children) {
+    const n = document.createElement(tag);
+    if (props) Object.keys(props).forEach(k => { if (k === 'text') n.textContent = props[k]; else if (k === 'class') n.className = props[k]; else n.setAttribute(k, props[k]); });
+    (children || []).forEach(c => n.appendChild(c));
+    return n;
+  }
+  async function copy(text, statusEl) {
+    let ok = false;
+    try { await navigator.clipboard.writeText(text); ok = true; } catch (e) {
+      const ta = el('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { ok = document.execCommand('copy'); } catch (e2) { ok = false; }
+      ta.remove();
+    }
+    statusEl.textContent = ok ? 'Copied.' : 'Could not copy. Select the text and copy it manually.';
+    setTimeout(() => { statusEl.textContent = ''; }, 3000);
+  }
+
+  // ---------- Tool 1 ----------
+  const pIds = ['p-sales', 'p-cogs', 'p-labor', 'p-burden', 't-cogs', 't-labor', 't-prime'];
+  function primeInput() {
+    return { sales: parseNum($('p-sales').value), cogs: parseNum($('p-cogs').value), labor: parseNum($('p-labor').value),
+      burden: $('p-burden').checked,
+      targets: { cogs: parseNum($('t-cogs').value), labor: parseNum($('t-labor').value), prime: parseNum($('t-prime').value) } };
+  }
+  let lastSummary = '';
+  let wasOk = false;
+  function renderPrime() {
+    const box = $('prime-result');
+    const input = primeInput();
+    const res = calcPrime(input);
+    box.textContent = '';
+    const animate = !wasOk; wasOk = res.state === 'ok';
+    box.appendChild(el('h2', { text: 'Result' }));
+    if (res.state !== 'ok') {
+      lastSummary = '';
+      box.appendChild(el('div', { class: 'msg' + (res.state === 'error' ? ' err' : ''), text: res.message }));
+      return;
+    }
+    const wrap = el('div', { class: animate ? 'fade' : '' });
+    if (!res.rows.length) {
+      wrap.appendChild(el('div', { class: 'msg', text: 'Enter COGS and labor to see percentages.' }));
+      box.appendChild(wrap); lastSummary = ''; return;
+    }
+    const kpis = el('div', { class: 'kpis' });
+    res.rows.forEach(r => kpis.appendChild(el('div', { class: 'kpi' }, [
+      el('div', { class: 'small', text: r.label + ' % of net sales' }),
+      el('div', { class: 'big num', text: r.pct.toFixed(1) + '%' })
+    ])));
+    wrap.appendChild(kpis);
+    if (res.missing) wrap.appendChild(el('p', { class: 'note', text: 'Prime cost needs both COGS and labor. Enter the missing figure to see it.' }));
+
+    const money = n => '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const thead = el('thead', null, [el('tr', null, ['Line', 'Dollars', '% of sales', 'Target', 'Variance'].map(h => el('th', { scope: 'col', text: h })))]);
+    const tbody = el('tbody');
+    res.rows.forEach(r => tbody.appendChild(el('tr', null, [
+      el('td', { text: r.label }), el('td', { text: money(r.dollars) }), el('td', { text: r.pct.toFixed(1) + '%' }),
+      el('td', { text: r.target + '%' }), el('td', { text: (r.variance > 0 ? '+' : '') + r.variance.toFixed(1) + ' pts' })
+    ])));
+    wrap.appendChild(el('div', { class: 'tablewrap' }, [el('table', null, [thead, tbody])]));
+
+    wrap.appendChild(el('h3', { text: 'Against target' }));
+    res.rows.forEach(r => {
+      const scale = Math.max(r.pct, r.target, 1) * 1.25;
+      const over = r.status === 'Over target';
+      const fill = el('div', { class: 'fill' + (over ? ' over' : '') }); fill.style.width = Math.min(100, Math.max(0, r.pct / scale * 100)) + '%';
+      const mark = el('div', { class: 'mark', title: 'Target ' + r.target + '%' }); mark.style.left = 'calc(' + (r.target / scale * 100) + '% - 1px)';
+      wrap.appendChild(el('div', { class: 'barrow' }, [
+        el('div', { class: 'cap' }, [el('span', { text: r.label + ': ' + r.pct.toFixed(1) + '% vs ' + r.target + '% target' }),
+          el('span', { class: over ? 'status-over' : (r.status === 'Under target' ? 'status-ok' : ''), text: r.status })]),
+        el('div', { class: 'bar', role: 'img', 'aria-label': r.label + ' ' + r.pct.toFixed(1) + ' percent, target ' + r.target + ' percent. ' + r.status }, [fill, mark])
+      ]));
+    });
+
+    res.rows.filter(r => r.status === 'Over target').forEach(r => {
+      wrap.appendChild(el('h3', { text: r.label + ': worth checking' }));
+      if (CHECKS[r.key]) wrap.appendChild(el('ul', { class: 'check-list' }, CHECKS[r.key].map(c => el('li', { text: c }))));
+      wrap.appendChild(el('p', { text: NEXT[r.key] }));
+    });
+    if (!input.burden) wrap.appendChild(el('p', { class: 'note', text: 'Labor is shown as entered. If it leaves out payroll taxes and benefits, labor and prime cost will read lower than the full figure.' }));
+    wrap.appendChild(el('p', { class: 'note', text: 'Ranges are rules of thumb and vary by concept. This is not accounting or tax advice.' }));
+    const status = el('div', { class: 'copied', role: 'status' });
+    const btn = el('button', { class: 'btn', type: 'button', text: 'Copy summary' });
+    lastSummary = summaryText(input, res);
+    btn.addEventListener('click', () => copy(lastSummary, status));
+    wrap.appendChild(el('div', { class: 'btns' }, [btn]));
+    wrap.appendChild(status);
+    box.appendChild(wrap);
+  }
+  pIds.forEach(id => $(id).addEventListener('input', renderPrime));
+  renderPrime();
+
+  // ---------- Tool 2 ----------
+  const hMap = { date: 'h-date', shift: 'h-shift', manager: 'h-mgr', numbers: 'h-numbers', eightySix: 'h-86', staffing: 'h-staff',
+    guest: 'h-guest', equipment: 'h-equip', must: 'h-must', unsure: 'h-unsure' };
+  function renderHandoff() {
+    const f = {}; Object.keys(hMap).forEach(k => { f[k] = $(hMap[k]).value; });
+    $('h-out').textContent = buildHandoff(f);
+  }
+  Object.keys(hMap).forEach(k => { $(hMap[k]).addEventListener('input', renderHandoff); $(hMap[k]).addEventListener('change', renderHandoff); });
+  $('h-copy').addEventListener('click', () => copy($('h-out').textContent, $('h-copied')));
+  $('h-clear').addEventListener('click', () => { Object.keys(hMap).forEach(k => { $(hMap[k]).value = ''; }); renderHandoff(); });
+  renderHandoff();
+
+  // ---------- Tool 3 ----------
+  function reviewInput() {
+    return { restaurant: $('r-rest').value, stars: $('r-stars').value, guest: $('r-guest').value, detail: $('r-detail').value,
+      signature: $('r-sig').value, contact: $('r-contact').value };
+  }
+  function counts() {
+    $('r-long-count').textContent = '(' + wordCount($('r-long').value) + ' words, limit 120)';
+    $('r-short-count').textContent = '(' + wordCount($('r-short').value) + ' words, limit 50)';
+  }
+  $('r-text').addEventListener('input', () => { $('r-warn').hidden = !needsCaution($('r-text').value); });
+  $('r-build').addEventListener('click', () => {
+    const r = buildReview(reviewInput());
+    if (!r) { $('r-empty').hidden = false; $('r-empty').textContent = 'Choose a star rating, then build the reply.'; $('r-results').hidden = true; $('r-stars').focus(); return; }
+    $('r-empty').hidden = true; $('r-results').hidden = false; $('r-results').classList.add('fade');
+    $('r-long').value = r.long; $('r-short').value = r.short; counts();
+  });
+  $('r-long').addEventListener('input', counts); $('r-short').addEventListener('input', counts);
+  $('r-copy-long').addEventListener('click', () => copy($('r-long').value, $('r-copied')));
+  $('r-copy-short').addEventListener('click', () => copy($('r-short').value, $('r-copied')));
+  $('r-clear').addEventListener('click', () => {
+    ['r-rest', 'r-guest', 'r-detail', 'r-contact', 'r-text', 'r-long', 'r-short'].forEach(id => { $(id).value = ''; });
+    $('r-stars').value = ''; $('r-sig').value = 'The Management Team';
+    $('r-warn').hidden = true; $('r-results').hidden = true; $('r-empty').hidden = false;
+  });
+
+  // ---------- Footer link (hidden until FOH.url is set) ----------
+  if (FOH.url && /^https?:\/\//i.test(FOH.url)) {
+    const a = $('foh-link'); a.href = FOH.url; a.textContent = FOH.text || 'Front of House AI'; a.rel = 'noopener'; a.hidden = false;
+  }
+})();
+</script>
+</body>
+</html>
